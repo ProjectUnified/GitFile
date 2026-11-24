@@ -19,9 +19,25 @@ No Python dependencies; `git` is the only requirement.
 
 ## Install
 
+### Arch Linux
+
+PKGBUILDs live under [`packaging/arch/`](packaging/arch): `gitfile` (tagged
+release) and `gitfile-git` (tracks the repo). Build and install either one:
+
 ```sh
-pipx install /path/to/GitFile     # provides the `gitfile` command
-# or run it straight from the checkout:
+git clone https://github.com/ProjectUnified/GitFile.git
+cd GitFile/packaging/arch/gitfile
+makepkg -si
+```
+
+Use `packaging/arch/gitfile-git` instead to follow `main`. Both directories are
+AUR-shaped (PKGBUILD + .SRCINFO), so they can be published as-is.
+
+### Other systems
+
+```sh
+pipx install "git+https://github.com/ProjectUnified/GitFile.git"
+# or run it straight from a checkout:
 python3 /path/to/GitFile/gitfile.py --help
 ./gitfile --help
 ```
