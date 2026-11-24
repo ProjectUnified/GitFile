@@ -1,0 +1,17 @@
+pkgbase = gitfile
+	pkgdesc = One patch per file for projects that track an upstream commit
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/ProjectUnified/GitFile
+	arch = any
+	license = MIT
+	makedepends = python-build
+	makedepends = python-installer
+	makedepends = python-setuptools
+	makedepends = python-wheel
+	depends = git
+	depends = python
+	source = gitfile-0.1.0.tar.gz::https://github.com/ProjectUnified/GitFile/archive/refs/tags/v0.1.0.tar.gz
+	sha256sums = 1df667765df484be9c47b8c3bc06497087178ce71952a84ea1cda454432e6984
+
+pkgname = gitfile

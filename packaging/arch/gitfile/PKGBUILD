@@ -10,20 +10,20 @@ license=('MIT')
 depends=('git' 'python')
 makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('1df667765df484be9c47b8c3bc06497087178ce71952a84ea1cda454432e6984')
 
 build() {
-  cd "$pkgname-$pkgver"
+  cd "GitFile-$pkgver"
   python -m build --wheel --no-isolation
 }
 
 check() {
-  cd "$pkgname-$pkgver"
+  cd "GitFile-$pkgver"
   python -m unittest discover -s tests -p 'test_*.py'
 }
 
 package() {
-  cd "$pkgname-$pkgver"
+  cd "GitFile-$pkgver"
   python -m installer --destdir="$pkgdir" --prefix=/usr dist/*.whl
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
