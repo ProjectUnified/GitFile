@@ -13,8 +13,10 @@ and can never conflict with each other.
 Commands:
     sync    fetch upstream, build a pristine baseline + working tree, apply patches
     update  regenerate patches from baseline vs working tree
+    revert  restore files from the baseline and drop their patches
     apply   apply existing patches (no upstream fetch)
     status  list patches and their applied state
+    export  write all per-file patches as one combined patch
 
 When `sync` detects that the upstream ref changed, it keeps the previous
 pristine baseline, three-way merges conflicting patches against it, and marks
@@ -575,6 +577,66 @@ def cmd_update(cfg, root, args):
     return 0
 
 
+def cmd_revert(cfg, root, args):
+    """Restore files from the baseline, dropping their per-file patches."""
+    patches_dir, baseline, _ = state_paths(cfg, root)
+    if not (baseline / MARKER).is_file():
+        raise GitfileError("baseline marker missing; run `gitfile sync` first")
+
+    allowed = source_paths(cfg)
+    rels = set()
+    for raw in args.paths:
+        rel = Path(raw)
+        if rel.is_absolute() or ".." in rel.parts:
+            raise GitfileError("path must be relative and stay inside root: %s" % raw)
+        rel_str = rel.as_posix().rstrip("/")
+        if not any(
+            rel_str == p.as_posix() or rel_str.startswith(p.as_posix() + "/")
+            for p in allowed
+        ):
+            raise GitfileError("path is not under a configured source path: %s" % raw)
+        for tree in (root, baseline):
+            node = tree / rel_str
+            if node.is_file():
+                rels.add(rel_str)
+            elif node.is_dir():
+                for item in node.rglob("*"):
+                    if item.is_file():
+                        rels.add((Path(rel_str) / item.relative_to(node)).as_posix())
+
+    if not rels:
+        raise GitfileError("nothing to revert under: %s" % ", ".join(args.paths))
+
+    restored = deleted = dropped = 0
+    for rel in sorted(rels):
+        work_file = root / rel
+        base_file = baseline / rel
+        if base_file.is_file():
+            unchanged = work_file.is_file() and filecmp.cmp(str(base_file), str(work_file), shallow=False)
+            if not unchanged:
+                work_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(base_file, work_file)
+                restored += 1
+        elif work_file.exists():
+            remove_path(work_file)
+            deleted += 1
+        for suffix in (".rej", ".orig"):
+            artifact = Path(str(work_file) + suffix)
+            if artifact.exists():
+                artifact.unlink()
+        patch = patches_dir / (rel + ".patch")
+        if patch.exists():
+            patch.unlink()
+            dropped += 1
+
+    prune_empty_dirs(patches_dir)
+    print(
+        "reverted %d file(s) (%d restored, %d deleted); removed %d patch(es)"
+        % (len(rels), restored, deleted, dropped)
+    )
+    return 0
+
+
 def cmd_apply(cfg, root, args):
     patches_dir, baseline, _ = state_paths(cfg, root)
     if args.check:
@@ -713,6 +775,14 @@ def build_parser():
     update = sub.add_parser("update", help="regenerate per-file patches from the working tree")
     update.add_argument("--force", action="store_true", help="record even if conflict markers/.rej files remain")
     update.set_defaults(func=cmd_update)
+
+    revert = sub.add_parser("revert", help="restore files from the baseline and drop their patches")
+    revert.add_argument(
+        "paths", nargs="+",
+        metavar="PATH",
+        help="repo-relative file or directory under a configured source path",
+    )
+    revert.set_defaults(func=cmd_revert)
 
     apply_cmd = sub.add_parser("apply", help="apply existing patches without fetching upstream")
     apply_cmd.add_argument("--check", action="store_true", help="only check that patches apply")

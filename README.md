@@ -77,6 +77,7 @@ GITFILE_MODE      "baseline" or "work"
 ```sh
 gitfile sync      # clone upstream, build baseline + work tree, apply patches
 gitfile update    # regenerate patches from work tree vs baseline
+gitfile revert    # restore files from the baseline and drop their patches (file or dir)
 gitfile apply     # apply patches without fetching upstream (--check to validate)
 gitfile status    # list patches, applied state, and unresolved conflicts
 gitfile export    # write all per-file patches as one combined patch
@@ -92,6 +93,14 @@ gitfile update
 
 `sync` is also the reset hatch: it discards unrecorded edits in the generated
 trees and replays the patches.
+
+To drop a change, revert the file (or a whole directory) from the baseline; its
+patch is removed in the same step:
+
+```sh
+gitfile revert src/main/java/com/example/Foo.java
+gitfile revert src/main/java/com/example/oldpackage
+```
 
 Add the state directories to `.gitignore`:
 

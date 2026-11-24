@@ -350,6 +350,40 @@ class GitfileTest(unittest.TestCase):
         self.assertIn("--- a/src/main/java/demo/Foo.java", combined)
         self.assertNotIn("mod/src/", combined)
 
+    def test_revert_drops_one_file_patch_and_keeps_others(self):
+        self.ok(gitfile(self.project, "sync"))
+        self.foo().write_text(FOO.replace("return 1;", "return 42;"))
+        bar = self.project / "mod/src/main/java/demo/Bar.java"
+        bar.write_text(BAR.replace("return 2;", "return 99;"))
+        self.ok(gitfile(self.project, "update"))
+
+        self.ok(gitfile(self.project, "revert", "mod/src/main/java/demo/Foo.java"))
+        self.assertEqual(self.foo().read_text(), FOO)
+        self.assertFalse(self.patch("mod/src/main/java/demo/Foo.java").exists())
+        self.assertTrue(self.patch("mod/src/main/java/demo/Bar.java").exists())
+        self.assertIn("return 99;", bar.read_text())
+
+    def test_revert_directory_handles_added_and_deleted_files(self):
+        self.ok(gitfile(self.project, "sync"))
+        new = self.project / "mod/src/main/java/demo/New.java"
+        new.write_text("package demo;\nclass New {}\n")
+        bar = self.project / "mod/src/main/java/demo/Bar.java"
+        bar.unlink()
+        self.ok(gitfile(self.project, "update"))
+        self.assertTrue(self.patch("mod/src/main/java/demo/New.java").exists())
+        self.assertTrue(self.patch("mod/src/main/java/demo/Bar.java").exists())
+
+        self.ok(gitfile(self.project, "revert", "mod/src/main/java/demo"))
+        self.assertFalse(new.exists())
+        self.assertTrue(bar.is_file())
+        self.assertEqual(list((self.project / "patches").rglob("*.patch")), [])
+
+    def test_revert_refuses_paths_outside_configured_sources(self):
+        self.ok(gitfile(self.project, "sync"))
+        result = gitfile(self.project, "revert", "gitfile.json")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("not under a configured source path", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
