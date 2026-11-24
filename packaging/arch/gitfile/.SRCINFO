@@ -1,6 +1,6 @@
 pkgbase = gitfile
 	pkgdesc = One patch per file for projects that track an upstream commit
-	pkgver = 0.1.0
+	pkgver = 0.2.0
 	pkgrel = 1
 	url = https://github.com/ProjectUnified/GitFile
 	arch = any
@@ -11,7 +11,7 @@ pkgbase = gitfile
 	makedepends = python-wheel
 	depends = git
 	depends = python
-	source = gitfile-0.1.0.tar.gz::https://github.com/ProjectUnified/GitFile/archive/refs/tags/v0.1.0.tar.gz
-	sha256sums = e6410e65d8d02253080f5f500400a21ee072e794d90c74d9c1fe3b818800b217
+	source = gitfile-0.2.0.tar.gz::https://github.com/ProjectUnified/GitFile/archive/refs/tags/v0.2.0.tar.gz
+	sha256sums = d8307fe32be609241c2c15215e4f4f2533e821bdce7449948ea5da3287ae1a64
 
 pkgname = gitfile
